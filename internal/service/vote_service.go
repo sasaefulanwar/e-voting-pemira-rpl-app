@@ -3,48 +3,116 @@ package service
 import (
 	"database/sql"
 	"errors"
-	"fmt"
+	"os"
+	"pemira-rpl/internal/domain"
+	"pemira-rpl/internal/repository"
+	"pemira-rpl/internal/utils"
 )
 
 type VoteService interface {
-	CastVote(voterID int, candidateID int) error
+	CastVote(
+		nim string,
+		electionID int,
+		paslonID int,
+	) error
 }
 
 type voteService struct {
-	db *sql.DB
+	db           *sql.DB
+	voterRepo    repository.VoterRepository
+	voteRepo     repository.VoteRepository
+	electionRepo repository.ElectionRepository
 }
 
-func NewVoteService(db *sql.DB) VoteService {
-	return &voteService{db: db}
+func NewVoteService(
+	db *sql.DB,
+	voterRepo repository.VoterRepository,
+	voteRepo repository.VoteRepository,
+	electionRepo repository.ElectionRepository,
+) VoteService {
+
+	return &voteService{
+		db:           db,
+		voterRepo:    voterRepo,
+		voteRepo:     voteRepo,
+		electionRepo: electionRepo,
+	}
 }
 
-func (s *voteService) CastVote(voterID int, candidateID int) error {
+func (s *voteService) CastVote(
+	nim string,
+	electionID int,
+	paslonID int,
+) error {
+
 	tx, err := s.db.Begin()
 	if err != nil {
 		return err
 	}
+
 	defer tx.Rollback()
 
-	var hasVoted bool
-	err = tx.QueryRow("SELECT has_voted FROM voters WHERE id = $1", voterID).Scan(&hasVoted)
+	voter, err := s.voterRepo.
+		GetByNIMForUpdate(tx, nim)
+
 	if err != nil {
-		return fmt.Errorf("gagal cek status voter: %v", err)
+		return err
 	}
 
-	if hasVoted {
-		return errors.New("lu udah nyoblos cuy, ga bisa 2 kali!")
+	if voter.IsSuspended {
+		return errors.New(
+			"akun sedang disuspend",
+		)
 	}
 
-	_, err = tx.Exec("INSERT INTO votes (voter_id, candidate_id) VALUES ($1, $2)", voterID, candidateID)
+	if voter.StatusMemilih {
+		return errors.New(
+			"sudah memilih",
+		)
+	}
+
+	election, err := s.electionRepo.
+		GetByID(tx, electionID)
+
 	if err != nil {
-		return fmt.Errorf("gagal nyimpen suara: %v", err)
+		return err
 	}
 
-	_, err = tx.Exec("UPDATE voters SET has_voted = TRUE WHERE id = $1", voterID)
+	if election.Status != "open" {
+		return errors.New(
+			"pemilu belum dibuka",
+		)
+	}
+
+	hashedNIM :=
+		utils.GenerateVoteHash(
+			nim,
+			os.Getenv("VOTE_SECRET_KEY"),
+		)
+
+	ballot := &domain.Ballot{
+		ElectionID: electionID,
+		HashedNIM:  hashedNIM,
+		PaslonID:   paslonID,
+	}
+
+	err = s.voteRepo.
+		InsertBallot(tx, ballot)
+
 	if err != nil {
-		return fmt.Errorf("gagal update status voter: %v", err)
+		return err
 	}
 
-	// 4. Sah!
+	err = s.voterRepo.
+		UpdateStatusMemilih(
+			tx,
+			nim,
+			true,
+		)
+
+	if err != nil {
+		return err
+	}
+
 	return tx.Commit()
 }

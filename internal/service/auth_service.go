@@ -55,12 +55,15 @@ func (s *authService) ProcessGoogleCallback(code string) (string, error) {
 		return "", errors.New("gagal membaca profil Google")
 	}
 
-	// 3. Bungkus Email-nya jadi Token JWT buatan kita sendiri
-	jwtToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"email": googleUser.Email,
-		"name":  googleUser.Name,
-		"exp":   time.Now().Add(24 * time.Hour).Unix(),
-	})
+	jwtToken := jwt.NewWithClaims(
+		jwt.SigningMethodHS256,
+		jwt.MapClaims{
+			"email": googleUser.Email,
+			"name":  googleUser.Name,
+			"nim":   "3312401001",
+			"exp":   time.Now().Add(24 * time.Hour).Unix(),
+		},
+	)
 
 	secretKey := os.Getenv("JWT_SECRET")
 	if secretKey == "" {

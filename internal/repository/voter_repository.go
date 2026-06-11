@@ -7,9 +7,14 @@ import (
 )
 
 type VoterRepository interface {
-	// Pakai *sql.Tx biar masuk dalam satu alur transaksi
 	GetByNIMForUpdate(tx *sql.Tx, nim string) (*domain.Pemilih, error)
 	UpdateEmail(tx *sql.Tx, nim string, email string) error
+
+	UpdateStatusMemilih(
+		tx *sql.Tx,
+		nim string,
+		status bool,
+	) error
 }
 
 type voterRepository struct{}
@@ -34,8 +39,44 @@ func (r *voterRepository) GetByNIMForUpdate(tx *sql.Tx, nim string) (*domain.Pem
 	return &v, nil
 }
 
-func (r *voterRepository) UpdateEmail(tx *sql.Tx, nim string, email string) error {
-	query := `UPDATE pemilih SET email_gmail_login = $1 WHERE nim = $2`
-	_, err := tx.Exec(query, email, nim)
+func (r *voterRepository) UpdateStatusMemilih(
+	tx *sql.Tx,
+	nim string,
+	status bool,
+) error {
+
+	query := `
+		UPDATE pemilih
+		SET status_memilih = $1
+		WHERE nim = $2
+	`
+
+	_, err := tx.Exec(
+		query,
+		status,
+		nim,
+	)
+
+	return err
+}
+
+func (r *voterRepository) UpdateEmail(
+	tx *sql.Tx,
+	nim string,
+	email string,
+) error {
+
+	query := `
+		UPDATE pemilih
+		SET email_gmail_login = $1
+		WHERE nim = $2
+	`
+
+	_, err := tx.Exec(
+		query,
+		email,
+		nim,
+	)
+
 	return err
 }

@@ -30,7 +30,27 @@ func main() {
 	authSrv := service.NewAuthService(oauthConfig)
 	authHandler := handler.NewAuthHandler(authSrv)
 
-	router := routes.SetupRoutes(voterHandler, authHandler)
+	// Tambah ini biar SetupRoutes compile
+	voteRepo := repository.NewVoteRepository()
+	electionRepo := repository.NewElectionRepository()
+	voteSrv := service.NewVoteService(
+		db,
+		voterRepo,
+		voteRepo,
+		electionRepo,
+	)
+	voteHandler := handler.NewVoteHandler(voteSrv)
+
+	candidateRepo := repository.NewCandidateRepository(db)
+	candidateService := service.NewCandidateService(candidateRepo)
+	candidateHandler := handler.NewCandidateHandler(candidateService)
+
+	router := routes.SetupRoutes(
+		voterHandler,
+		authHandler,
+		voteHandler,
+		candidateHandler,
+	)
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -38,7 +58,6 @@ func main() {
 	}
 
 	fmt.Printf("server running on http://localhost:%s\n", port)
-
 	log.Fatal(http.ListenAndServe(":"+port, middleware.Logger(router)))
 
 }

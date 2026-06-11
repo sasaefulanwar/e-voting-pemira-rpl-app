@@ -29,6 +29,7 @@ func (h *AuthHandler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	jwtToken, err := h.srv.ProcessGoogleCallback(code)
+
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -46,7 +47,9 @@ func (h *AuthHandler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 	})
 
 	w.Header().Set("Content-Type", "application/json")
+
 	w.WriteHeader(http.StatusOK)
+
 	json.NewEncoder(w).Encode(map[string]string{
 		"status":  "success",
 		"message": "Login Google berhasil! Token udah nempel di Cookie browser lu.",

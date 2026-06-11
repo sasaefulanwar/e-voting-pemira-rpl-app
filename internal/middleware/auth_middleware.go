@@ -53,9 +53,21 @@ func AuthMiddleware(next http.Handler) http.HandlerFunc {
 			return
 		}
 
-		email := claims["email"].(string)
+		email, _ := claims["email"].(string)
+		nim, _ := claims["nim"].(string)
 
-		ctx := context.WithValue(r.Context(), "email", email)
+		ctx := context.WithValue(
+			r.Context(),
+			"email",
+			email,
+		)
+
+		ctx = context.WithValue(
+			ctx,
+			"nim",
+			nim,
+		)
+
 		r = r.WithContext(ctx)
 
 		next.ServeHTTP(w, r)

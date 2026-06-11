@@ -3,7 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
-	"pemira-rpl/internal/service" // Sesuaikan path module lu
+	"pemira-rpl/internal/service"
 )
 
 type VoteHandler struct {
@@ -11,34 +11,76 @@ type VoteHandler struct {
 }
 
 func NewVoteHandler(vs service.VoteService) *VoteHandler {
-	return &VoteHandler{voteService: vs}
+	return &VoteHandler{
+		voteService: vs,
+	}
 }
 
-func (h *VoteHandler) CastVote(w http.ResponseWriter, r *http.Request) {
+type VoteRequest struct {
+	ElectionID int `json:"election_id"`
+	PaslonID   int `json:"paslon_id"`
+}
 
-	voterID, ok := r.Context().Value("voter_id").(int)
-	if !ok {
-		http.Error(w, `{"error": "Lu siapa cuy? Login dulu!"}`, http.StatusUnauthorized)
+func (h *VoteHandler) CastVote(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
+
+	nim, ok := r.Context().
+		Value("nim").(string)
+
+	if !ok || nim == "" {
+		http.Error(
+			w,
+			`{"error":"NIM tidak ditemukan di token"}`,
+			http.StatusUnauthorized,
+		)
 		return
 	}
 
-	var req struct {
-		CandidateID int `json:"candidate_id"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, `{"error": "Format data salah!"}`, http.StatusBadRequest)
+	var req VoteRequest
+
+	if err := json.NewDecoder(r.Body).
+		Decode(&req); err != nil {
+
+		http.Error(
+			w,
+			`{"error":"request tidak valid"}`,
+			http.StatusBadRequest,
+		)
 		return
 	}
 
-	err := h.voteService.CastVote(voterID, req.CandidateID)
+	err := h.voteService.CastVote(
+		nim,
+		req.ElectionID,
+		req.PaslonID,
+	)
+
 	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusConflict)
-		w.Write([]byte(`{"error": "` + err.Error() + `"}`))
+
+		w.Header().
+			Set(
+				"Content-Type",
+				"application/json",
+			)
+
+		w.WriteHeader(
+			http.StatusConflict,
+		)
+
+		json.NewEncoder(w).Encode(
+			map[string]string{
+				"error": err.Error(),
+			},
+		)
+
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"message": "Voting berhasil! Suara lu udah masuk database cuy."}`))
+	json.NewEncoder(w).Encode(
+		map[string]string{
+			"message": "vote berhasil",
+		},
+	)
 }

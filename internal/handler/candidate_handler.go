@@ -37,3 +37,31 @@ func (h *CandidateHandler) GetAll(
 
 	json.NewEncoder(w).Encode(candidates)
 }
+
+func (h *CandidateHandler) GetResults(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
+
+	results, err := h.svc.GetResults()
+
+	if err != nil {
+
+		http.Error(
+			w,
+			err.Error(),
+			http.StatusInternalServerError,
+		)
+
+		return
+	}
+
+	w.Header().Set(
+		"Content-Type",
+		"application/json",
+	)
+
+	json.NewEncoder(w).Encode(
+		results,
+	)
+}

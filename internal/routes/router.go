@@ -35,5 +35,12 @@ func SetupRoutes(voterHandler *handler.VoterHandler, authHandler *handler.AuthHa
 		),
 	)
 
+	mux.Handle(
+		"/api/v1/results",
+		middleware.AuthMiddleware(
+			http.HandlerFunc(candidateHandler.GetResults),
+		),
+	)
+
 	return mux
 }

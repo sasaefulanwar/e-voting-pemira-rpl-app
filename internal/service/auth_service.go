@@ -26,20 +26,17 @@ func NewAuthService(oauthConf *oauth2.Config) AuthService {
 }
 
 func (s *authService) GetGoogleLoginURL() string {
-	// "state-pemira" ini nanti diganti random string buat cegah CSRF, sementara kita hardcode dulu
 	return s.oauthConf.AuthCodeURL("state-pemira")
 }
 
 func (s *authService) ProcessGoogleCallback(code string) (string, error) {
 	ctx := context.Background()
 
-	// 1. Tuker "code" dari URL dengan "Access Token" Google
 	token, err := s.oauthConf.Exchange(ctx, code)
 	if err != nil {
 		return "", errors.New("gagal menukar kode dari Google")
 	}
 
-	// 2. Ambil data asli mahasiswa dari API Google
 	client := s.oauthConf.Client(ctx, token)
 	res, err := client.Get("https://www.googleapis.com/oauth2/v2/userinfo")
 	if err != nil || res.StatusCode != http.StatusOK {
@@ -60,14 +57,14 @@ func (s *authService) ProcessGoogleCallback(code string) (string, error) {
 		jwt.MapClaims{
 			"email": googleUser.Email,
 			"name":  googleUser.Name,
-			"nim":   "3312401001",
+			"nim":   "",
 			"exp":   time.Now().Add(24 * time.Hour).Unix(),
 		},
 	)
 
 	secretKey := os.Getenv("JWT_SECRET")
 	if secretKey == "" {
-		secretKey = "kunci-rahasia-pemira" // Samain sama yang di Auth Service
+		secretKey = "kunci-rahasia-pemira"
 	}
 
 	tokenString, err := jwtToken.SignedString([]byte(secretKey))

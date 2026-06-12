@@ -22,6 +22,7 @@ type voteService struct {
 	voterRepo    repository.VoterRepository
 	voteRepo     repository.VoteRepository
 	electionRepo repository.ElectionRepository
+	auditRepo    repository.AuditRepository
 }
 
 func NewVoteService(
@@ -29,6 +30,7 @@ func NewVoteService(
 	voterRepo repository.VoterRepository,
 	voteRepo repository.VoteRepository,
 	electionRepo repository.ElectionRepository,
+	auditRepo repository.AuditRepository,
 ) VoteService {
 
 	return &voteService{
@@ -36,6 +38,7 @@ func NewVoteService(
 		voterRepo:    voterRepo,
 		voteRepo:     voteRepo,
 		electionRepo: electionRepo,
+		auditRepo:    auditRepo,
 	}
 }
 
@@ -109,6 +112,16 @@ func (s *voteService) CastVote(
 			nim,
 			true,
 		)
+
+	if err != nil {
+		return err
+	}
+
+	err = s.auditRepo.LogEventTx(
+		tx,
+		hashedNIM,
+		"VOTE_CAST",
+	)
 
 	if err != nil {
 		return err

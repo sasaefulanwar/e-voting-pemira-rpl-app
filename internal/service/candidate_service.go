@@ -7,6 +7,7 @@ import (
 
 type CandidateService interface {
 	GetAll() ([]domain.Candidate, error)
+	GetResults() ([]domain.Result, error)
 }
 
 type candidateService struct {
@@ -26,4 +27,11 @@ func (s *candidateService) GetAll() (
 	error,
 ) {
 	return s.repo.GetAll()
+}
+
+func (s *candidateService) GetResults() (
+	[]domain.Result,
+	error,
+) {
+	return s.repo.GetResults()
 }

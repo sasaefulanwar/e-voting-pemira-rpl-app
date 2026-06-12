@@ -7,6 +7,7 @@ import (
 
 type CandidateRepository interface {
 	GetAll() ([]domain.Candidate, error)
+	GetResults() ([]domain.Result, error)
 }
 
 type candidateRepository struct {
@@ -41,4 +42,44 @@ func (r *candidateRepository) GetAll() ([]domain.Candidate, error) {
 	}
 
 	return candidates, nil
+}
+
+func (r *candidateRepository) GetResults() (
+	[]domain.Result,
+	error,
+) {
+
+	rows, err := r.db.Query(`
+		SELECT
+			id_paslon,
+			COUNT(*)
+		FROM kertas_suara
+		GROUP BY id_paslon
+		ORDER BY id_paslon
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []domain.Result
+
+	for rows.Next() {
+
+		var result domain.Result
+
+		if err := rows.Scan(
+			&result.PaslonID,
+			&result.Votes,
+		); err != nil {
+			return nil, err
+		}
+
+		results = append(
+			results,
+			result,
+		)
+	}
+
+	return results, nil
 }

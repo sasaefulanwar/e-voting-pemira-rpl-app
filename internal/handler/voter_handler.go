@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"pemira-rpl/internal/dto"
 	"pemira-rpl/internal/service"
+	"pemira-rpl/internal/utils"
 )
 
 type VoterHandler struct {
@@ -47,6 +48,37 @@ func (h *VoterHandler) BindNIM(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
+
+	jwtToken, err := utils.GenerateJWT(
+		realEmail,
+		req.Nama,
+		req.NIM,
+	)
+
+	if err != nil {
+		w.WriteHeader(
+			http.StatusInternalServerError,
+		)
+
+		json.NewEncoder(w).Encode(
+			map[string]string{
+				"error": "gagal membuat JWT baru",
+			},
+		)
+
+		return
+	}
+
+	http.SetCookie(
+		w,
+		&http.Cookie{
+			Name:     "jwt_token",
+			Value:    jwtToken,
+			HttpOnly: true,
+			Path:     "/",
+			SameSite: http.SameSiteLaxMode,
+		},
+	)
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(res)

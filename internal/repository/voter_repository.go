@@ -9,12 +9,15 @@ import (
 type VoterRepository interface {
 	GetByNIMForUpdate(tx *sql.Tx, nim string) (*domain.Pemilih, error)
 	UpdateEmail(tx *sql.Tx, nim string, email string) error
-
 	UpdateStatusMemilih(
 		tx *sql.Tx,
 		nim string,
 		status bool,
 	) error
+	FindByEmail(
+		tx *sql.Tx,
+		email string,
+	) (*domain.Pemilih, error)
 }
 
 type voterRepository struct{}
@@ -25,7 +28,6 @@ func NewVoterRepository() VoterRepository {
 
 func (r *voterRepository) GetByNIMForUpdate(tx *sql.Tx, nim string) (*domain.Pemilih, error) {
 	var v domain.Pemilih
-	// FOR UPDATE ini kunci rahasianya cuy! Baris ini bakal dikunci sampai transaksi beres.
 	query := `SELECT nim, nama, email_gmail_login, status_memilih, is_suspended 
 	          FROM pemilih WHERE nim = $1 FOR UPDATE`
 
@@ -79,4 +81,45 @@ func (r *voterRepository) UpdateEmail(
 	)
 
 	return err
+}
+
+func (r *voterRepository) FindByEmail(
+	tx *sql.Tx,
+	email string,
+) (*domain.Pemilih, error) {
+
+	var voter domain.Pemilih
+
+	query := `
+	SELECT
+		nim,
+		nama,
+		email_gmail_login,
+		status_memilih,
+		is_suspended
+	FROM pemilih
+	WHERE email_gmail_login = $1
+	LIMIT 1
+	`
+
+	err := tx.QueryRow(
+		query,
+		email,
+	).Scan(
+		&voter.NIM,
+		&voter.Nama,
+		&voter.EmailGmailLogin,
+		&voter.StatusMemilih,
+		&voter.IsSuspended,
+	)
+
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &voter, nil
 }

@@ -13,3 +13,8 @@ type Candidate struct {
 	CreatedAt       time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt       time.Time `json:"updated_at" db:"updated_at"`
 }
+
+type Result struct {
+	PaslonID int `json:"paslon_id"`
+	Votes    int `json:"votes"`
+}

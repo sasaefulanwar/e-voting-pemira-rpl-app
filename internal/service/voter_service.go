@@ -43,9 +43,32 @@ func (s *voterService) ProcessBinding(req dto.BindNIMRequest, loggedInEmail stri
 		err = errors.New("NIM kamu ditangguhkan (Suspended)")
 		return nil, err
 	}
-	if voter.EmailGmailLogin != "" {
-		err = errors.New("NIM ini sudah di-binding dengan email lain")
+
+	if voter.EmailGmailLogin != nil &&
+		*voter.EmailGmailLogin != "" &&
+		*voter.EmailGmailLogin != loggedInEmail {
+
+		return nil, errors.New(
+			"NIM ini sudah di-binding dengan email lain",
+		)
+	}
+
+	existingVoter, err :=
+		s.repo.FindByEmail(
+			tx,
+			loggedInEmail,
+		)
+
+	if err != nil {
 		return nil, err
+	}
+
+	if existingVoter != nil &&
+		existingVoter.NIM != req.NIM {
+
+		return nil, errors.New(
+			"email ini sudah terhubung dengan NIM lain",
+		)
 	}
 
 	err = s.repo.UpdateEmail(tx, req.NIM, loggedInEmail)

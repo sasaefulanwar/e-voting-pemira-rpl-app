@@ -30,14 +30,15 @@ func main() {
 	authSrv := service.NewAuthService(oauthConfig)
 	authHandler := handler.NewAuthHandler(authSrv)
 
-	// Tambah ini biar SetupRoutes compile
 	voteRepo := repository.NewVoteRepository()
 	electionRepo := repository.NewElectionRepository()
+	auditRepo := repository.NewAuditRepository()
 	voteSrv := service.NewVoteService(
 		db,
 		voterRepo,
 		voteRepo,
 		electionRepo,
+		auditRepo,
 	)
 	voteHandler := handler.NewVoteHandler(voteSrv)
 

@@ -6,7 +6,7 @@ import (
 	"pemira-rpl/internal/middleware"
 )
 
-func SetupRoutes(voterHandler *handler.VoterHandler, authHandler *handler.AuthHandler, voteHandler *handler.VoteHandler, candidateHandler *handler.CandidateHandler, adminHandler *handler.AdminHandler, electionHandler *handler.ElectionHandler) *http.ServeMux {
+func SetupRoutes(voterHandler *handler.VoterHandler, authHandler *handler.AuthHandler, voteHandler *handler.VoteHandler, candidateHandler *handler.CandidateHandler, adminHandler *handler.AdminHandler, electionHandler *handler.ElectionHandler, disputeHandler *handler.DisputeHandler) *http.ServeMux {
 	mux := http.NewServeMux()
 
 	fs := http.FileServer(
@@ -55,12 +55,80 @@ func SetupRoutes(voterHandler *handler.VoterHandler, authHandler *handler.AuthHa
 	)
 
 	mux.HandleFunc("/api/v1/election/status", electionHandler.GetStatus)
-	mux.HandleFunc("/api/v1/admin/election/open", electionHandler.OpenElection)
-	mux.HandleFunc("/api/v1/admin/election/close", electionHandler.CloseElection)
 
-	mux.HandleFunc(
+	mux.Handle(
+		"/api/v1/admin/election/open",
+		middleware.AdminOnly(
+			middleware.AuthMiddleware(
+				http.HandlerFunc(
+					electionHandler.OpenElection,
+				),
+			),
+		),
+	)
+
+	mux.Handle(
+		"/api/v1/admin/election/close",
+		middleware.AdminOnly(
+			middleware.AuthMiddleware(
+				http.HandlerFunc(
+					electionHandler.CloseElection,
+				),
+			),
+		),
+	)
+
+	mux.Handle(
+		"/api/v1/disputes",
+		middleware.AuthMiddleware(
+			http.HandlerFunc(
+				disputeHandler.SubmitDispute,
+			),
+		),
+	)
+
+	mux.Handle(
+		"/api/v1/admin/disputes",
+		middleware.AdminOnly(
+			middleware.AuthMiddleware(
+				http.HandlerFunc(
+					disputeHandler.GetAllDisputes,
+				),
+			),
+		),
+	)
+
+	mux.Handle(
+		"/api/v1/admin/disputes/approve",
+		middleware.AdminOnly(
+			middleware.AuthMiddleware(
+				http.HandlerFunc(
+					disputeHandler.ApproveDispute,
+				),
+			),
+		),
+	)
+
+	mux.Handle(
+		"/api/v1/admin/disputes/reject",
+		middleware.AdminOnly(
+			middleware.AuthMiddleware(
+				http.HandlerFunc(
+					disputeHandler.RejectDispute,
+				),
+			),
+		),
+	)
+
+	mux.Handle(
 		"/api/v1/admin/statistics",
-		adminHandler.GetStatistics,
+		middleware.AdminOnly(
+			middleware.AuthMiddleware(
+				http.HandlerFunc(
+					adminHandler.GetStatistics,
+				),
+			),
+		),
 	)
 
 	return mux

@@ -26,6 +26,12 @@ type VoterRepository interface {
 		notVoted int,
 		err error,
 	)
+	SuspendByNIM(
+		nim string,
+	) error
+	UnsuspendByNIM(
+		nim string,
+	) error
 }
 
 type voterRepository struct {
@@ -171,4 +177,30 @@ func (r *voterRepository) GetStatistics(
 	}
 
 	return total, voted, total - voted, nil
+}
+
+func (
+	r *voterRepository,
+) SuspendByNIM(
+	nim string,
+) error {
+
+	_, err := r.db.Exec(`
+        UPDATE pemilih
+        SET is_suspended = TRUE
+        WHERE nim = $1
+    `,
+		nim,
+	)
+
+	return err
+}
+
+func (r *voterRepository) UnsuspendByNIM(nim string) error {
+	_, err := r.db.Exec(`
+		UPDATE pemilih
+		SET is_suspended=FALSE
+		WHERE nim=$1
+	`, nim)
+	return err
 }

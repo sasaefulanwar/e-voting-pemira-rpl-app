@@ -53,6 +53,22 @@ func main() {
 	candidateHandler := handler.NewCandidateHandler(candidateService)
 	electionHandler := handler.NewElectionHandler(electionService)
 
+	disputeRepo :=
+		repository.NewDisputeRepository(
+			db,
+		)
+
+	disputeService :=
+		service.NewDisputeService(
+			disputeRepo,
+			voterRepo,
+		)
+
+	disputeHandler :=
+		handler.NewDisputeHandler(
+			disputeService,
+		)
+
 	router := routes.SetupRoutes(
 		voterHandler,
 		authHandler,
@@ -60,6 +76,7 @@ func main() {
 		candidateHandler,
 		adminHandler,
 		electionHandler,
+		disputeHandler,
 	)
 
 	port := os.Getenv("PORT")

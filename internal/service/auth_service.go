@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -52,12 +53,32 @@ func (s *authService) ProcessGoogleCallback(code string) (string, error) {
 		return "", errors.New("gagal membaca profil Google")
 	}
 
+	admins := strings.Split(
+		os.Getenv("ADMIN_EMAILS"),
+		",",
+	)
+
+	role := "voter"
+
+	for _, adminEmail := range admins {
+
+		if strings.EqualFold(
+			strings.TrimSpace(adminEmail),
+			googleUser.Email,
+		) {
+
+			role = "admin"
+			break
+		}
+	}
+
 	jwtToken := jwt.NewWithClaims(
 		jwt.SigningMethodHS256,
 		jwt.MapClaims{
 			"email": googleUser.Email,
 			"name":  googleUser.Name,
 			"nim":   "",
+			"role":  role,
 			"exp":   time.Now().Add(24 * time.Hour).Unix(),
 		},
 	)

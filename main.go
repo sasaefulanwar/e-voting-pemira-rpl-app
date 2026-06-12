@@ -23,7 +23,7 @@ func main() {
 
 	oauthConfig := config.InitOAuthConfig()
 
-	voterRepo := repository.NewVoterRepository()
+	voterRepo := repository.NewVoterRepository(db)
 	voterSrv := service.NewVoterService(db, voterRepo)
 	voterHandler := handler.NewVoterHandler(voterSrv)
 
@@ -31,7 +31,13 @@ func main() {
 	authHandler := handler.NewAuthHandler(authSrv)
 
 	voteRepo := repository.NewVoteRepository()
-	electionRepo := repository.NewElectionRepository()
+	electionRepo := repository.NewElectionRepository(db)
+	electionService := service.NewElectionService(db, electionRepo, voterRepo)
+
+	adminHandler :=
+		handler.NewAdminHandler(
+			electionService,
+		)
 	auditRepo := repository.NewAuditRepository()
 	voteSrv := service.NewVoteService(
 		db,
@@ -43,14 +49,17 @@ func main() {
 	voteHandler := handler.NewVoteHandler(voteSrv)
 
 	candidateRepo := repository.NewCandidateRepository(db)
-	candidateService := service.NewCandidateService(candidateRepo)
+	candidateService := service.NewCandidateService(candidateRepo, electionRepo)
 	candidateHandler := handler.NewCandidateHandler(candidateService)
+	electionHandler := handler.NewElectionHandler(electionService)
 
 	router := routes.SetupRoutes(
 		voterHandler,
 		authHandler,
 		voteHandler,
 		candidateHandler,
+		adminHandler,
+		electionHandler,
 	)
 
 	port := os.Getenv("PORT")
@@ -59,6 +68,18 @@ func main() {
 	}
 
 	fmt.Printf("server running on http://localhost:%s\n", port)
-	log.Fatal(http.ListenAndServe(":"+port, middleware.Logger(router)))
+	handlerWithCors :=
+		middleware.CORS(
+			middleware.Logger(
+				router,
+			),
+		)
+
+	log.Fatal(
+		http.ListenAndServe(
+			":"+port,
+			handlerWithCors,
+		),
+	)
 
 }

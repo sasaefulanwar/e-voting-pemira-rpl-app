@@ -43,25 +43,32 @@ func (h *CandidateHandler) GetResults(
 	r *http.Request,
 ) {
 
-	results, err := h.svc.GetResults()
+	email, _ := r.Context().
+		Value("email").(string)
+
+	isAdmin :=
+		email ==
+			"himarpl@polindra.ac.id"
+
+	results, err :=
+		h.svc.GetResults(
+			isAdmin,
+		)
 
 	if err != nil {
 
-		http.Error(
-			w,
-			err.Error(),
-			http.StatusInternalServerError,
+		w.WriteHeader(
+			http.StatusForbidden,
+		)
+
+		json.NewEncoder(w).Encode(
+			map[string]string{
+				"error": err.Error(),
+			},
 		)
 
 		return
 	}
 
-	w.Header().Set(
-		"Content-Type",
-		"application/json",
-	)
-
-	json.NewEncoder(w).Encode(
-		results,
-	)
+	json.NewEncoder(w).Encode(results)
 }

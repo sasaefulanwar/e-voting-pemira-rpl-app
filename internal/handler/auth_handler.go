@@ -52,15 +52,12 @@ func (h *AuthHandler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 		},
 	)
 
-	w.Header().Set("Content-Type", "application/json")
-
-	w.WriteHeader(http.StatusOK)
-
-	json.NewEncoder(w).Encode(map[string]string{
-		"status":  "success",
-		"message": "Login Google berhasil! Token udah nempel di Cookie browser lu.",
-	})
-
+	http.Redirect(
+		w,
+		r,
+		"http://localhost:5173/bind",
+		http.StatusTemporaryRedirect,
+	)
 }
 
 func (h *AuthHandler) BindNIM(w http.ResponseWriter, r *http.Request) {

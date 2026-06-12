@@ -18,12 +18,27 @@ type VoterRepository interface {
 		tx *sql.Tx,
 		email string,
 	) (*domain.Pemilih, error)
+	GetStatistics(
+		db *sql.DB,
+	) (
+		total int,
+		voted int,
+		notVoted int,
+		err error,
+	)
 }
 
-type voterRepository struct{}
+type voterRepository struct {
+	db *sql.DB
+}
 
-func NewVoterRepository() VoterRepository {
-	return &voterRepository{}
+func NewVoterRepository(
+	db *sql.DB,
+) VoterRepository {
+
+	return &voterRepository{
+		db: db,
+	}
 }
 
 func (r *voterRepository) GetByNIMForUpdate(tx *sql.Tx, nim string) (*domain.Pemilih, error) {
@@ -122,4 +137,38 @@ func (r *voterRepository) FindByEmail(
 	}
 
 	return &voter, nil
+}
+
+func (r *voterRepository) GetStatistics(
+	db *sql.DB,
+) (
+	int,
+	int,
+	int,
+	error,
+) {
+
+	var total int
+	var voted int
+
+	err := db.QueryRow(`
+		SELECT COUNT(*)
+		FROM pemilih
+	`).Scan(&total)
+
+	if err != nil {
+		return 0, 0, 0, err
+	}
+
+	err = db.QueryRow(`
+		SELECT COUNT(*)
+		FROM pemilih
+		WHERE status_memilih = TRUE
+	`).Scan(&voted)
+
+	if err != nil {
+		return 0, 0, 0, err
+	}
+
+	return total, voted, total - voted, nil
 }

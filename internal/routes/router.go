@@ -6,8 +6,20 @@ import (
 	"pemira-rpl/internal/middleware"
 )
 
-func SetupRoutes(voterHandler *handler.VoterHandler, authHandler *handler.AuthHandler, voteHandler *handler.VoteHandler, candidateHandler *handler.CandidateHandler) *http.ServeMux {
+func SetupRoutes(voterHandler *handler.VoterHandler, authHandler *handler.AuthHandler, voteHandler *handler.VoteHandler, candidateHandler *handler.CandidateHandler, adminHandler *handler.AdminHandler, electionHandler *handler.ElectionHandler) *http.ServeMux {
 	mux := http.NewServeMux()
+
+	fs := http.FileServer(
+		http.Dir("./images"),
+	)
+
+	mux.Handle(
+		"/images/",
+		http.StripPrefix(
+			"/images/",
+			fs,
+		),
+	)
 
 	mux.HandleFunc("/api/v1/health", handler.HealthCheck)
 
@@ -40,6 +52,15 @@ func SetupRoutes(voterHandler *handler.VoterHandler, authHandler *handler.AuthHa
 		middleware.AuthMiddleware(
 			http.HandlerFunc(candidateHandler.GetResults),
 		),
+	)
+
+	mux.HandleFunc("/api/v1/election/status", electionHandler.GetStatus)
+	mux.HandleFunc("/api/v1/admin/election/open", electionHandler.OpenElection)
+	mux.HandleFunc("/api/v1/admin/election/close", electionHandler.CloseElection)
+
+	mux.HandleFunc(
+		"/api/v1/admin/statistics",
+		adminHandler.GetStatistics,
 	)
 
 	return mux

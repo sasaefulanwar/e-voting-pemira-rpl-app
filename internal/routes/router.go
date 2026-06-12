@@ -27,6 +27,20 @@ func SetupRoutes(voterHandler *handler.VoterHandler, authHandler *handler.AuthHa
 
 	mux.HandleFunc("/api/v1/auth/google/callback", authHandler.GoogleCallback)
 
+	mux.HandleFunc(
+		"/api/v1/auth/logout",
+		authHandler.Logout,
+	)
+
+	mux.Handle(
+		"/api/v1/auth/me",
+		middleware.AuthMiddleware(
+			http.HandlerFunc(
+				authHandler.Me,
+			),
+		),
+	)
+
 	mux.Handle("/api/v1/voter/bind", middleware.AuthMiddleware(http.HandlerFunc(voterHandler.BindNIM)))
 
 	mux.Handle(

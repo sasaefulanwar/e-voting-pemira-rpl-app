@@ -30,15 +30,6 @@ func AuthMiddleware(next http.Handler) http.HandlerFunc {
 		})
 
 		if err != nil || !token.Valid {
-			println("🚨 SENSOR SATPAM GAGAL: ", err.Error())
-
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(map[string]string{"error": "Token JWT lu gak valid atau kadaluarsa!"})
-			return
-		}
-
-		if err != nil || !token.Valid {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusUnauthorized)
 			json.NewEncoder(w).Encode(map[string]string{"error": "Token JWT lu gak valid atau kadaluarsa!"})
@@ -55,6 +46,7 @@ func AuthMiddleware(next http.Handler) http.HandlerFunc {
 
 		email, _ := claims["email"].(string)
 		nim, _ := claims["nim"].(string)
+		role, _ := claims["role"].(string)
 
 		ctx := context.WithValue(
 			r.Context(),
@@ -66,6 +58,12 @@ func AuthMiddleware(next http.Handler) http.HandlerFunc {
 			ctx,
 			"nim",
 			nim,
+		)
+
+		ctx = context.WithValue(
+			ctx,
+			"role",
+			role,
 		)
 
 		r = r.WithContext(ctx)

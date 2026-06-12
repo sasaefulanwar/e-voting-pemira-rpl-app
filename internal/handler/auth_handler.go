@@ -102,3 +102,70 @@ func (h *AuthHandler) BindNIM(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`{"message":"bind berhasil, JWT diperbarui"}`))
 }
+
+func (h *AuthHandler) Logout(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
+
+	http.SetCookie(
+		w,
+		&http.Cookie{
+			Name:     "jwt_token",
+			Value:    "",
+			Path:     "/",
+			HttpOnly: true,
+			MaxAge:   -1,
+		},
+	)
+
+	w.Header().Set(
+		"Content-Type",
+		"application/json",
+	)
+
+	json.NewEncoder(w).Encode(
+		map[string]string{
+			"message": "logout berhasil",
+		},
+	)
+}
+
+func (h *AuthHandler) Me(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
+
+	emailValue :=
+		r.Context().
+			Value("email")
+
+	roleValue :=
+		r.Context().
+			Value("role")
+
+	nimValue :=
+		r.Context().
+			Value("nim")
+
+	if emailValue == nil {
+
+		http.Error(
+			w,
+			"unauthorized",
+			http.StatusUnauthorized,
+		)
+
+		return
+	}
+
+	json.NewEncoder(
+		w,
+	).Encode(
+		map[string]interface{}{
+			"email": emailValue,
+			"role":  roleValue,
+			"nim":   nimValue,
+		},
+	)
+}

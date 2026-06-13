@@ -42,19 +42,16 @@ func (h *AuthHandler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println("GOOGLE CALLBACK ERROR:", err)
 
-	http.SetCookie(
-		w,
-		&http.Cookie{
-			Name:     "jwt_token",
-			Value:    jwtToken,
-			HttpOnly: true,
-			Secure:   true,
-			SameSite: http.SameSiteNoneMode,
-			Path:     "/",
-			MaxAge:   86400,
-			Expires:  time.Now().Add(24 * time.Hour),
-		},
-	)
+	http.SetCookie(w, &http.Cookie{
+		Name:     "jwt_token",
+		Value:    jwtToken,
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteNoneMode,
+		Path:     "/",
+		MaxAge:   86400,
+		Expires:  time.Now().Add(24 * time.Hour),
+	})
 
 	http.Redirect(
 		w,

@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 	"pemira-rpl/internal/service"
@@ -38,6 +39,8 @@ func (h *AuthHandler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 		return
 	}
+
+	fmt.Println("GOOGLE CALLBACK ERROR:", err)
 
 	http.SetCookie(
 		w,

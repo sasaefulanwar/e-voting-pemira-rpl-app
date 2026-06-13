@@ -45,8 +45,9 @@ func (h *AuthHandler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 			Name:     "jwt_token",
 			Value:    jwtToken,
 			HttpOnly: true,
+			Secure:   true,
+			SameSite: http.SameSiteNoneMode,
 			Path:     "/",
-			SameSite: http.SameSiteLaxMode,
 			MaxAge:   86400,
 			Expires:  time.Now().Add(24 * time.Hour),
 		},
@@ -55,7 +56,7 @@ func (h *AuthHandler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(
 		w,
 		r,
-		"http://localhost:5173/bind",
+		os.Getenv("FRONTEND_URL")+"/bind",
 		http.StatusTemporaryRedirect,
 	)
 }
@@ -118,8 +119,6 @@ func (h *AuthHandler) Logout(
 			MaxAge:   -1,
 		},
 	)
-
-	
 
 	w.Header().Set(
 		"Content-Type",

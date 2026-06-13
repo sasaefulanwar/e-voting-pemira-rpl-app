@@ -81,9 +81,7 @@ func main() {
 		disputeHandler,
 	)
 
-	handler := middleware.AuthMiddleware(
-		middleware.RateLimit(router),
-	)
+	handler := middleware.RateLimit(router)
 
 	port := os.Getenv("PORT")
 

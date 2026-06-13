@@ -13,14 +13,6 @@ func AdminChain(h http.HandlerFunc) http.Handler {
 func SetupRoutes(voterHandler *handler.VoterHandler, authHandler *handler.AuthHandler, voteHandler *handler.VoteHandler, candidateHandler *handler.CandidateHandler, adminHandler *handler.AdminHandler, electionHandler *handler.ElectionHandler, disputeHandler *handler.DisputeHandler) *http.ServeMux {
 	mux := http.NewServeMux()
 
-	http.Handle("/uploads/",
-		http.StripPrefix("/uploads/",
-			http.FileServer(http.Dir("./uploads")),
-		),
-	)
-
-	mux.HandleFunc("/api/v1/health", handler.HealthCheck)
-
 	mux.HandleFunc("/api/v1/auth/google/login", authHandler.GoogleLogin)
 
 	mux.HandleFunc("/api/v1/auth/google/callback", authHandler.GoogleCallback)
@@ -29,6 +21,14 @@ func SetupRoutes(voterHandler *handler.VoterHandler, authHandler *handler.AuthHa
 		"/api/v1/auth/logout",
 		authHandler.Logout,
 	)
+
+	http.Handle("/uploads/",
+		http.StripPrefix("/uploads/",
+			http.FileServer(http.Dir("./uploads")),
+		),
+	)
+
+	mux.HandleFunc("/api/v1/health", handler.HealthCheck)
 
 	mux.Handle(
 		"/api/v1/auth/me",

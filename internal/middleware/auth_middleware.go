@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 	"os"
 
@@ -65,6 +66,8 @@ func AuthMiddleware(next http.Handler) http.HandlerFunc {
 			"role",
 			role,
 		)
+
+		log.Println("PATH:", r.URL.Path)
 
 		r = r.WithContext(ctx)
 		next.ServeHTTP(w, r)

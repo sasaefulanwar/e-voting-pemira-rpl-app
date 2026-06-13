@@ -32,6 +32,7 @@ type VoterRepository interface {
 	UnsuspendByNIM(
 		nim string,
 	) error
+	IsEmailBlacklisted(email string) (bool, error)
 }
 
 type voterRepository struct {
@@ -203,4 +204,13 @@ func (r *voterRepository) UnsuspendByNIM(nim string) error {
 		WHERE nim=$1
 	`, nim)
 	return err
+}
+
+func (r *voterRepository) IsEmailBlacklisted(email string) (bool, error) {
+	var isBlacklisted bool
+	err := r.db.QueryRow("SELECT EXISTS(SELECT 1 FROM email_blacklist WHERE email = $1)", email).Scan(&isBlacklisted)
+	if err != nil {
+		return false, err
+	}
+	return isBlacklisted, nil
 }

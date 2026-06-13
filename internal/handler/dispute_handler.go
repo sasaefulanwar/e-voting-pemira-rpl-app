@@ -80,31 +80,18 @@ func (
 	)
 }
 
-func (h *DisputeHandler) SubmitDispute(
-	w http.ResponseWriter,
-	r *http.Request,
-) {
-	// Maksimal file 5MB
-	err := r.ParseMultipartForm(5 << 20)
+func (h *DisputeHandler) SubmitDispute(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseMultipartForm(2 << 20)
 	if err != nil {
-		http.Error(w, "Gagal parsing form data", http.StatusBadRequest)
+		http.Error(w, "Ukuran file terlalu besar, maks 2MB!", http.StatusBadRequest)
 		return
 	}
 
 	nim := r.FormValue("nim")
-	if nim == "" {
-		http.Error(w, "NIM wajib diisi", http.StatusBadRequest)
-		return
-	}
-
 	emailValue := r.Context().Value("email")
-	if emailValue == nil {
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
-		return
-	}
 	email, ok := emailValue.(string)
-	if !ok {
-		http.Error(w, "invalid email context", http.StatusUnauthorized)
+	if nim == "" || !ok {
+		http.Error(w, "Data tidak lengkap atau unauthorized", http.StatusBadRequest)
 		return
 	}
 
@@ -116,7 +103,27 @@ func (h *DisputeHandler) SubmitDispute(
 	}
 	defer file.Close()
 
-	// Simpan file ke folder lokal ./uploads/ktm
+	// ---------------------------------------------------------
+	// 🔥 PERBAIKAN NFR-07: MIME TYPE CHECKING (Bukan ekstensi!)
+	// ---------------------------------------------------------
+	buff := make([]byte, 512)
+	_, err = file.Read(buff)
+	if err != nil {
+		http.Error(w, "Gagal membaca file", http.StatusInternalServerError)
+		return
+	}
+
+	// Kembalikan pointer file ke awal setelah dibaca
+	file.Seek(0, io.SeekStart)
+
+	fileType := http.DetectContentType(buff)
+	if fileType != "image/jpeg" && fileType != "image/png" && fileType != "image/jpg" {
+		http.Error(w, "Format file ditolak! Wajib JPG/PNG asli, dilarang memalsukan ekstensi!", http.StatusUnsupportedMediaType)
+		return
+	}
+	// ---------------------------------------------------------
+
+	// Simpan file sementara ke lokal (Nanti kita ganti ke S3/MinIO)
 	filename := fmt.Sprintf("%d-%s", time.Now().Unix(), header.Filename)
 	filepath := fmt.Sprintf("./uploads/ktm/%s", filename)
 
@@ -127,11 +134,7 @@ func (h *DisputeHandler) SubmitDispute(
 	}
 	defer out.Close()
 
-	_, err = io.Copy(out, file)
-	if err != nil {
-		http.Error(w, "Gagal menyimpan file", http.StatusInternalServerError)
-		return
-	}
+	io.Copy(out, file)
 
 	// Submit sengketa
 	err = h.svc.SubmitDispute(nim, email, filename)
@@ -142,7 +145,7 @@ func (h *DisputeHandler) SubmitDispute(
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{
-		"message": "Sengketa berhasil diajukan",
+		"message": "Sengketa berhasil diajukan, akun lu otomatis disuspend sementara!",
 		"ktm":     filename,
 	})
 }

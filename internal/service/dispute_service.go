@@ -22,26 +22,30 @@ func NewDisputeService(repo repository.DisputeRepository, voterRepo repository.V
 }
 
 func (s *disputeService) SubmitDispute(nim, reporterEmail, ktmPath string) error {
-	return s.repo.Submit(domain.Dispute{
+	err := s.repo.Submit(domain.Dispute{
 		NIM:           nim,
 		ReporterEmail: reporterEmail,
 		KTMPath:       ktmPath,
 		Status:        "pending",
 	})
-}
-
-func (s *disputeService) ApproveDispute(id int64) error {
-	dispute, err := s.repo.GetByID(id)
 	if err != nil {
 		return err
 	}
 
-	// Unsuspend voter
-	if err := s.voterRepo.UnsuspendByNIM(dispute.NIM); err != nil {
+	err = s.voterRepo.SuspendByNIM(nim)
+	if err != nil {
 		return err
 	}
 
-	return s.repo.Approve(id)
+	return nil
+}
+
+func (s *disputeService) ApproveDispute(disputeID int64) error { // <-- Ganti jadi int64
+	err := s.repo.ApproveAndResolveTransaction(disputeID)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *disputeService) RejectDispute(id int64) error {

@@ -119,6 +119,8 @@ func (h *AuthHandler) Logout(
 		},
 	)
 
+	
+
 	w.Header().Set(
 		"Content-Type",
 		"application/json",

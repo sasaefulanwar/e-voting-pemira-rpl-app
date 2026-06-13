@@ -6,6 +6,10 @@ import (
 	"pemira-rpl/internal/middleware"
 )
 
+func AdminChain(h http.HandlerFunc) http.Handler {
+	return middleware.AdminOnly(middleware.AuthMiddleware(h))
+}
+
 func SetupRoutes(voterHandler *handler.VoterHandler, authHandler *handler.AuthHandler, voteHandler *handler.VoteHandler, candidateHandler *handler.CandidateHandler, adminHandler *handler.AdminHandler, electionHandler *handler.ElectionHandler, disputeHandler *handler.DisputeHandler) *http.ServeMux {
 	mux := http.NewServeMux()
 
@@ -81,13 +85,12 @@ func SetupRoutes(voterHandler *handler.VoterHandler, authHandler *handler.AuthHa
 		),
 	)
 
+	// YANG BENER (Harus ada AuthMiddleware-nya)
 	mux.Handle(
 		"/api/v1/admin/election/close",
 		middleware.AdminOnly(
 			middleware.AuthMiddleware(
-				http.HandlerFunc(
-					electionHandler.CloseElection,
-				),
+				http.HandlerFunc(electionHandler.CloseElection),
 			),
 		),
 	)
@@ -136,14 +139,11 @@ func SetupRoutes(voterHandler *handler.VoterHandler, authHandler *handler.AuthHa
 
 	mux.Handle(
 		"/api/v1/admin/statistics",
-		middleware.AdminOnly(
-			middleware.AuthMiddleware(
-				http.HandlerFunc(
-					adminHandler.GetStatistics,
-				),
+		middleware.AuthMiddleware( // Jalanin Auth dulu buat isi konteks
+			middleware.AdminOnly( // Baru jalanin AdminOnly buat cek isinya
+				http.HandlerFunc(adminHandler.GetStatistics),
 			),
 		),
 	)
-
 	return mux
 }

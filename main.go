@@ -27,7 +27,7 @@ func main() {
 	voterSrv := service.NewVoterService(db, voterRepo)
 	voterHandler := handler.NewVoterHandler(voterSrv)
 
-	authSrv := service.NewAuthService(oauthConfig)
+	authSrv := service.NewAuthService(oauthConfig, voterRepo)
 	authHandler := handler.NewAuthHandler(authSrv)
 
 	voteRepo := repository.NewVoteRepository()

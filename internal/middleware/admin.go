@@ -1,46 +1,24 @@
 package middleware
 
 import (
+	"log"
 	"net/http"
 )
 
 func AdminOnly(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Ambil dari konteks pake kunci "role" (HARUS SAMA PERSIS)
+		val := r.Context().Value("role")
 
-	return http.HandlerFunc(
-		func(
-			w http.ResponseWriter,
-			r *http.Request,
-		) {
+		log.Printf("DEBUG ADMIN - Role dari konteks: %v", val)
 
-			roleVal :=
-				r.Context().Value("role")
+		role, ok := val.(string)
+		if !ok || role != "admin" {
+			log.Printf("DEBUG ADMIN - Akses ditolak! Role: %v", val)
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
 
-			if roleVal == nil {
-
-				http.Error(
-					w,
-					"unauthorized",
-					http.StatusUnauthorized,
-				)
-
-				return
-			}
-
-			role, ok :=
-				roleVal.(string)
-
-			if !ok || role != "admin" {
-
-				http.Error(
-					w,
-					"forbidden: admin only",
-					http.StatusForbidden,
-				)
-
-				return
-			}
-
-			next.ServeHTTP(w, r)
-		},
-	)
+		next.ServeHTTP(w, r)
+	})
 }

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"os"
+	"pemira-rpl/internal/repository"
 	"strings"
 	"time"
 
@@ -20,10 +21,14 @@ type AuthService interface {
 
 type authService struct {
 	oauthConf *oauth2.Config
+	voterRepo repository.VoterRepository
 }
 
-func NewAuthService(oauthConf *oauth2.Config) AuthService {
-	return &authService{oauthConf: oauthConf}
+func NewAuthService(oauthConf *oauth2.Config, voterRepo repository.VoterRepository) AuthService {
+	return &authService{oauthConf: oauthConf,
+		voterRepo: voterRepo,
+	}
+
 }
 
 func (s *authService) GetGoogleLoginURL() string {
@@ -57,6 +62,15 @@ func (s *authService) ProcessGoogleCallback(code string) (string, error) {
 		os.Getenv("ADMIN_EMAILS"),
 		",",
 	)
+
+	isBlacklisted, errBlacklist := s.voterRepo.IsEmailBlacklisted(googleUser.Email)
+	if errBlacklist != nil {
+		return "", errors.New("gagal memvalidasi keamanan email")
+	}
+
+	if isBlacklisted {
+		return "", errors.New("AKSES DITOLAK: Email lu masuk daftar hitam karena indikasi curang (Fraud)!")
+	}
 
 	role := "voter"
 

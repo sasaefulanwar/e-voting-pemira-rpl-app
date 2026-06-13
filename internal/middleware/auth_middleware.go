@@ -26,9 +26,20 @@ func AuthMiddleware(next http.Handler) http.HandlerFunc {
 			secretKey = "kunci-rahasia-pemira"
 		}
 
-		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-			return []byte(secretKey), nil
-		})
+		log.Println("COOKIE FOUND:", true)
+
+		token, err := jwt.Parse(
+			tokenString,
+			func(token *jwt.Token) (interface{}, error) {
+				return []byte(secretKey), nil
+			},
+		)
+
+		log.Println("JWT PARSE ERROR:", err)
+
+		if token != nil {
+			log.Println("TOKEN VALID:", token.Valid)
+		}
 
 		if err != nil || !token.Valid {
 			w.Header().Set("Content-Type", "application/json")

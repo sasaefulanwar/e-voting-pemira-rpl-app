@@ -180,21 +180,23 @@ func (r *voterRepository) GetStatistics(
 	return total, voted, total - voted, nil
 }
 
-func (
-	r *voterRepository,
-) SuspendByNIM(
-	nim string,
-) error {
-
-	_, err := r.db.Exec(`
+func (r *voterRepository) SuspendByNIM(nim string) error {
+	res, err := r.db.Exec(`
         UPDATE pemilih
         SET is_suspended = TRUE
         WHERE nim = $1
-    `,
-		nim,
-	)
+    `, nim)
 
-	return err
+	if err != nil {
+		return err
+	}
+
+	rows, _ := res.RowsAffected()
+	if rows == 0 {
+		return errors.New("NIM tidak ditemukan")
+	}
+
+	return nil
 }
 
 func (r *voterRepository) UnsuspendByNIM(nim string) error {

@@ -3,7 +3,6 @@ package middleware
 import (
 	"context"
 	"encoding/json"
-	"log"
 	"net/http"
 	"os"
 
@@ -68,14 +67,6 @@ func AuthMiddleware(next http.Handler) http.HandlerFunc {
 		)
 
 		r = r.WithContext(ctx)
-
-		emailVal := ctx.Value("email")
-		roleVal := ctx.Value("role")
-		log.Printf("DEBUG - Email diset: %v, Role diset: %v", emailVal, roleVal)
-
-		r = r.WithContext(ctx)
-		next.ServeHTTP(w, r)
-
 		next.ServeHTTP(w, r)
 	}
 }

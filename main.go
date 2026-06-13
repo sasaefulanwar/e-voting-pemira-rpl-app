@@ -21,6 +21,8 @@ func main() {
 	db := config.InitDB()
 	defer db.Close()
 
+	router := http.NewServeMux()
+
 	oauthConfig := config.InitOAuthConfig()
 
 	voterRepo := repository.NewVoterRepository(db)
@@ -69,7 +71,7 @@ func main() {
 			disputeService,
 		)
 
-	router := routes.SetupRoutes(
+	router = routes.SetupRoutes(
 		voterHandler,
 		authHandler,
 		voteHandler,
@@ -79,24 +81,30 @@ func main() {
 		disputeHandler,
 	)
 
+	handler := middleware.AuthMiddleware(
+		middleware.RateLimit(router),
+	)
+
 	port := os.Getenv("PORT")
+
 	if port == "" {
 		port = "8080"
+	}
+
+	server := &http.Server{
+		Addr:    ":" + port,
+		Handler: handler,
 	}
 
 	fmt.Printf("server running on http://localhost:%s\n", port)
 	handlerWithCors :=
 		middleware.CORS(
 			middleware.Logger(
-				router,
+				handler,
 			),
 		)
+	server.Handler = handlerWithCors
 
-	log.Fatal(
-		http.ListenAndServe(
-			":"+port,
-			handlerWithCors,
-		),
-	)
+	log.Fatal(server.ListenAndServe())
 
 }

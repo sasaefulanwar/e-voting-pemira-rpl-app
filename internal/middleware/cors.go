@@ -8,7 +8,7 @@ func CORS(next http.Handler) http.Handler {
 
 			w.Header().Set(
 				"Access-Control-Allow-Origin",
-				"http://localhost:5173",
+				"https://pemirarpl2026.online",
 			)
 
 			w.Header().Set(

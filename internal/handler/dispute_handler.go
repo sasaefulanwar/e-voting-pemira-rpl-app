@@ -127,6 +127,12 @@ func (h *DisputeHandler) SubmitDispute(w http.ResponseWriter, r *http.Request) {
 	filename := fmt.Sprintf("%d-%s", time.Now().Unix(), header.Filename)
 	filepath := fmt.Sprintf("./uploads/ktm/%s", filename)
 
+	err = os.MkdirAll("./uploads/ktm", os.ModePerm)
+	if err != nil {
+		http.Error(w, "Gagal membuat folder upload", http.StatusInternalServerError)
+		return
+	}
+
 	out, err := os.Create(filepath)
 	if err != nil {
 		http.Error(w, "Gagal menyimpan file", http.StatusInternalServerError)
@@ -136,7 +142,10 @@ func (h *DisputeHandler) SubmitDispute(w http.ResponseWriter, r *http.Request) {
 
 	io.Copy(out, file)
 
-	// Submit sengketa
+	fmt.Println("NIM:", nim)
+	fmt.Println("EMAIL:", email)
+	fmt.Println("FILE:", header.Filename)
+
 	err = h.svc.SubmitDispute(nim, email, filename)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)

@@ -13,15 +13,9 @@ func AdminChain(h http.HandlerFunc) http.Handler {
 func SetupRoutes(voterHandler *handler.VoterHandler, authHandler *handler.AuthHandler, voteHandler *handler.VoteHandler, candidateHandler *handler.CandidateHandler, adminHandler *handler.AdminHandler, electionHandler *handler.ElectionHandler, disputeHandler *handler.DisputeHandler) *http.ServeMux {
 	mux := http.NewServeMux()
 
-	fs := http.FileServer(
-		http.Dir("./images"),
-	)
-
-	mux.Handle(
-		"/images/",
-		http.StripPrefix(
-			"/images/",
-			fs,
+	http.Handle("/uploads/",
+		http.StripPrefix("/uploads/",
+			http.FileServer(http.Dir("./uploads")),
 		),
 	)
 
@@ -76,8 +70,8 @@ func SetupRoutes(voterHandler *handler.VoterHandler, authHandler *handler.AuthHa
 
 	mux.Handle(
 		"/api/v1/admin/election/open",
-		middleware.AdminOnly(
-			middleware.AuthMiddleware(
+		middleware.AuthMiddleware(
+			middleware.AdminOnly(
 				http.HandlerFunc(
 					electionHandler.OpenElection,
 				),
@@ -85,12 +79,13 @@ func SetupRoutes(voterHandler *handler.VoterHandler, authHandler *handler.AuthHa
 		),
 	)
 
-	// YANG BENER (Harus ada AuthMiddleware-nya)
 	mux.Handle(
 		"/api/v1/admin/election/close",
-		middleware.AdminOnly(
-			middleware.AuthMiddleware(
-				http.HandlerFunc(electionHandler.CloseElection),
+		middleware.AuthMiddleware(
+			middleware.AdminOnly(
+				http.HandlerFunc(
+					electionHandler.CloseElection,
+				),
 			),
 		),
 	)
@@ -106,8 +101,8 @@ func SetupRoutes(voterHandler *handler.VoterHandler, authHandler *handler.AuthHa
 
 	mux.Handle(
 		"/api/v1/admin/disputes",
-		middleware.AdminOnly(
-			middleware.AuthMiddleware(
+		middleware.AuthMiddleware(
+			middleware.AdminOnly(
 				http.HandlerFunc(
 					disputeHandler.GetAllDisputes,
 				),
@@ -117,8 +112,8 @@ func SetupRoutes(voterHandler *handler.VoterHandler, authHandler *handler.AuthHa
 
 	mux.Handle(
 		"/api/v1/admin/disputes/approve",
-		middleware.AdminOnly(
-			middleware.AuthMiddleware(
+		middleware.AuthMiddleware(
+			middleware.AdminOnly(
 				http.HandlerFunc(
 					disputeHandler.ApproveDispute,
 				),
@@ -128,8 +123,8 @@ func SetupRoutes(voterHandler *handler.VoterHandler, authHandler *handler.AuthHa
 
 	mux.Handle(
 		"/api/v1/admin/disputes/reject",
-		middleware.AdminOnly(
-			middleware.AuthMiddleware(
+		middleware.AuthMiddleware(
+			middleware.AdminOnly(
 				http.HandlerFunc(
 					disputeHandler.RejectDispute,
 				),

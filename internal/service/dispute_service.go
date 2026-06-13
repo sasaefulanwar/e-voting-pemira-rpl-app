@@ -1,6 +1,7 @@
 package service
 
 import (
+	"log"
 	"pemira-rpl/internal/domain"
 	"pemira-rpl/internal/repository"
 )
@@ -34,7 +35,7 @@ func (s *disputeService) SubmitDispute(nim, reporterEmail, ktmPath string) error
 
 	err = s.voterRepo.SuspendByNIM(nim)
 	if err != nil {
-		return err
+		log.Printf("WARN suspend gagal: %v", err)
 	}
 
 	return nil
